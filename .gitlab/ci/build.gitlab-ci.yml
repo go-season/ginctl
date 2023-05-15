@@ -1,0 +1,24 @@
+.binaries: &binaries
+  extends:
+    - .efficacy_org_runner
+    - .merge_request_pipelines
+  stage: build
+  only:
+    - master
+    - tags
+  artifacts:
+    paths:
+    - out/binaries/
+    expire_in: 7d
+
+.default_script: &default-script
+  script:
+    - export platforms=$(echo $CI_JOB_NAME | sed 's|binaries ||')
+    - make build BUILD_PLATFORMS="-osarch='$platforms'"
+
+binaries darwin/amd64:
+  <<: *binaries
+  <<: *default-script
+binaries linux/amd64 linux/arm:
+  <<: *binaries
+  <<: *default-script

@@ -1,0 +1,4 @@
+for file in $(find out -type f); do
+    echo "touching ${file}"
+    touch ${file}
+done

@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+
+set -exo pipefail
+
+tag=${1:-$CI_COMMIT_TAG}
+
+if [[ -z "${tag}" ]]; then
+    echo -e "usage:\n\t$0 tag"
+
+    exit 2
+fi
+
+downloads_repo="http://gitlab.idc.xiaozhu.com/$CI_PROJECT_PATH-downloads.git"
+downloads_local_cache=$HOME/.$CI_PROJECT_PATH"_downloads"
+binaries_out=out
+
+pull () {
+    echo "Pulling downloads repository"
+
+    git clone $downloads_repo $downloads_local_cache
+}
+
+pull_local_cache_if_not_exists () {
+    echo "Checking local cache repo exists"
+    [[ ! -d "$downloads_local_cache" ]] && pull
+    return 0
+}
+
+check_binaries_available () {
+    echo "Checking binaries available"
+
+    [[ ! -d "$binaries_out" ]] && echo "Please execute make build first." && exit 1
+
+    return 0
+}
+
+mkdir_tag_binaries () {
+    echo "Making tag binaries"
+
+    [[ ! -d "$downloads_local_cache/$tag" ]] && mkdir $downloads_local_cache/$tag
+
+    return 0
+}
+
+add_binaries_and_clean () {
+    echo "Moving binaries to cache repository"
+
+    rsync -av --delete out/ $downloads_local_cache/$tag
+
+    echo "Cleaning out"
+
+    rm -rf out
+
+    return 0
+}
+
+push () {
+    echo "Pushing tag to remote"
+
+    git -C $downloads_local_cache add .
+    git -C $downloads_local_cache commit -m "add $tag binaries"
+    git -C $downloads_local_cache push
+
+    echo "\033[0;32mPush tag success\033[0m"
+    return 0
+}
+
+pull_local_cache_if_not_exists
+check_binaries_available
+mkdir_tag_binaries
+add_binaries_and_clean
+push
+

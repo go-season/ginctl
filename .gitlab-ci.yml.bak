@@ -1,0 +1,8 @@
+stages:
+  - build
+  - release
+
+include:
+  - local: /.gitlab/ci/_common.gitlab-ci.yml
+  - local: /.gitlab/ci/build.gitlab-ci.yml
+  - local: /.gitlab/ci/release.gitlab-ci.yml
